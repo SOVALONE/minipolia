@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="uk">
+<head><meta charset="utf-8"><title>Мініполія — тест логіки</title>
+<style>body{font:14px/1.5 Inter,system-ui;background:#111;color:#eee;padding:20px} pre{white-space:pre-wrap} .ok{color:#2ed573} .bad{color:#ff4d6d}</style>
+</head>
+<body>
+<h2>Тест ігрової логіки (без 3D): N ігор ботів на прискоренні</h2>
+<pre id="out">Виконується…</pre>
+<script type="module">
+  // Фейковий view: усі анімації — миттєві, діалоги вирішуються випадково.
+  import { Game } from '../src/game/Game.js';
+  import { updateTweens } from '../src/utils/tween.js';
+
+  const out = document.getElementById('out');
+  // «Прокручуємо» усі wait() миттєво: цикл через MessageChannel (без 4-мс затримки setInterval)
+  let pumping = true;
+  const ch = new MessageChannel();
+  ch.port1.onmessage = () => { updateTweens(10); if (pumping) ch.port2.postMessage(0); };
+  ch.port2.postMessage(0);
+  const noop = () => {};
+  const stats = { cards: {}, busRide: 0, busPay: 0, raids: 0, bankrupt: 0, finished: 0, turns: 0, errors: [] };
+
+  function fakeView() {
+    return {
+      update: noop, log: noop, toast: noop, focusPlayer: noop, moneyFx: noop,
+      onUpgrade: noop, onPropertyReleased: noop, onBankrupt: () => stats.bankrupt++, celebrateFund: noop,
+      rollDice: async () => {}, movePlayer: async () => {}, teleportPlayer: async () => { stats.busRide++; },
+      sendToShelter: async () => { stats.raids++; }, returnFromShelter: async () => {},
+      showCard: async (deck, card) => { stats.cards[card.id] = (stats.cards[card.id] || 0) + 1; },
+      choose: async ({ options }) => options.find((o) => !o.disabled)?.id,
+      onPurchase: async () => {}, airRaidAlert: async () => {},
+      showWinner: noop,
+    };
+  }
+
+  const GAMES = 12, MAX_TURNS = 500;
+  const players = ['А', 'Б', 'В', 'Г'].map((name, i) => ({ name, color: '#fff', token: 'cat', isBot: true }));
+
+  for (let g = 0; g < GAMES; g++) {
+    const game = new Game(fakeView(), players);
+    const done = new Promise((res) => {
+      const check = setInterval(() => {
+        const s = game.state;
+        if (s.phase === 'over' || s.turnNo > MAX_TURNS) { clearInterval(check); res(); }
+        out.textContent = `Гра ${g + 1}/${GAMES}, хід ${s.turnNo}…`;
+      }, 50);
+    });
+    game.start().catch((e) => stats.errors.push(e.stack));
+    await done;
+    const s = game.state;
+    stats.turns += s.turnNo;
+    if (s.phase === 'over') stats.finished++;
+    game.state.phase = 'over'; // зупиняємо, якщо дійшли до ліміту
+    // Інваріанти
+    for (const p of s.players) {
+      if (!p.bankrupt && p.money < 0) stats.errors.push(`Гра ${g}: від'ємний баланс у ${p.name}: ${p.money}`);
+      if (p.skipTurns < 0) stats.errors.push(`Гра ${g}: skipTurns < 0`);
+    }
+    for (const [i, o] of Object.entries(s.owners)) {
+      if (s.players[o.ownerId].bankrupt) stats.errors.push(`Гра ${g}: клітинка ${i} належить банкруту`);
+    }
+    stats.busPay += s.players.reduce((a, p) => a + p.donated, 0);
+  }
+  pumping = false;
+
+  const ok = stats.errors.length === 0;
+  out.innerHTML = `<span class="${ok ? 'ok' : 'bad'}">${ok ? 'PASS' : 'FAIL'}</span>
+Ігор: ${GAMES}, завершено з переможцем: ${stats.finished}, середньо ходів: ${Math.round(stats.turns / GAMES)}
+Поїздок у ТЦК: ${stats.busRide}, тривог: ${stats.raids}, банкрутств: ${stats.bankrupt}, донатів усього: ${stats.busPay} ₴
+Картки: ${JSON.stringify(stats.cards)}
+${stats.errors.slice(0, 10).join('\n')}`;
+  window.TEST_RESULT = { ok, ...stats };
+</script>
+</body>
+</html>
