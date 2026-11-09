@@ -32,8 +32,10 @@ export const QUALITY_PRESETS = {
 export const QUALITY_KEY = 'minipolia.quality';
 
 function resolveQuality() {
-  const wanted = params.get('quality') || localStorage.getItem(QUALITY_KEY) || 'ultra';
-  const id = QUALITY_PRESETS[wanted]?.ready ? wanted : 'ultra';
+  // Телефони/планшети за замовчуванням — «Низькі», ПК — «Ультра»
+  const fallback = matchMedia('(pointer: coarse)').matches ? 'low' : 'ultra';
+  const wanted = params.get('quality') || localStorage.getItem(QUALITY_KEY) || fallback;
+  const id = QUALITY_PRESETS[wanted]?.ready ? wanted : fallback;
   const gfx = { id, ...QUALITY_PRESETS[id] };
   if (params.get('ssao') === '0') gfx.ssao = false;
   if (params.get('bloom') === '0') gfx.bloom = false;

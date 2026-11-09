@@ -112,6 +112,23 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #0b1020; col
 .gfx-row small { width: auto; font-size: 11px; }
 
 @media (max-width: 900px) {
-  #players { width: 190px; } #log { width: 260px; height: 120px; } #props, #help { display: none; }
+  #players { width: 190px; } #log { width: 260px; height: 120px; } #help { display: none; }
+  #props { width: 200px; max-height: 35vh; }
   .topbar { gap: 10px; padding: 8px 10px; } .fund { min-width: 140px; }
+}
+/* Телефон (портрет) */
+@media (max-width: 600px) {
+  .topbar { top: 6px; left: 6px; right: 6px; transform: none; gap: 8px; padding: 6px 8px; border-radius: 12px; }
+  .logo { display: none; }
+  .clock { font-size: 14px; } .fund { min-width: 0; flex: 1; } .fund-title { font-size: 11px; flex-wrap: wrap; }
+  #players { top: 66px; left: 6px; width: 150px; padding: 4px; gap: 3px; }
+  .player { padding: 5px 7px; } .player .row small, .meta { display: none; } .money { font-size: 14px; }
+  #props { top: 66px; right: 6px; width: 165px; max-height: 30vh; padding: 6px 8px; font-size: 12px; }
+  #log { left: 6px; right: 6px; width: auto; bottom: 74px; height: 64px; font-size: 11px; padding: 6px 8px; }
+  #actions { bottom: 10px; width: calc(100% - 12px); }
+  #actions .btn { flex: 1; font-size: 13px; padding: 12px 8px; }
+  #bot-note { bottom: 150px; font-size: 12px; }
+  #tile-info { bottom: 150px; right: 6px; width: 200px; }
+  .card { padding: 18px 16px 14px; } .card h2 { font-size: 19px; } .card h1.title { font-size: 34px; }
+  .setup-row { flex-wrap: wrap; gap: 6px; } .setup-row small { width: auto; }
 }
